@@ -1,0 +1,19 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Web Build Output
+dist/
+www/
+
+# Capacitor android directory (will be added and built dynamically by GitHub Actions workflow)
+android/
+
+# IDE / System files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

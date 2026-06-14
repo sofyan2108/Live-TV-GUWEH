@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>GolTV Sports - Live Streaming</title>
+  <!-- Google Fonts for premium typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+  <!-- hls.js CDN for playback support -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js"></script>
+</head>
+<body>
+
+  <!-- Header Utama -->
+  <header class="app-header">
+    <div class="header-logo">
+      <span class="logo-badge">LIVE</span>
+      <h1 class="logo-title">GOL<span class="highlight-neon">TV</span> <span class="highlight-gold">SPORTS</span></h1>
+    </div>
+    <div class="search-wrapper">
+      <div class="search-box">
+        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input type="text" id="search-input" placeholder="Cari nama saluran, negara..." autocomplete="off">
+      </div>
+    </div>
+  </header>
+
+  <!-- Konten Utama Aplikasi -->
+  <main class="app-layout">
+    
+    <!-- Bagian Pemutar Video (Kiri pada Desktop) -->
+    <section class="player-section">
+      <div class="video-container" id="video-wrapper">
+        <video id="video" autoplay playsinline controls preload="auto"></video>
+        
+        <!-- Spinner Loading Video -->
+        <div class="video-overlay" id="video-loading-overlay">
+          <div class="glowing-spinner"></div>
+          <span class="overlay-text">Menghubungkan ke Saluran...</span>
+        </div>
+        
+        <!-- Error Overlay -->
+        <div class="video-overlay error" id="video-error-overlay" style="display: none;">
+          <div class="error-icon">⚠️</div>
+          <span class="overlay-text error-msg">Gagal memuat tayangan. Saluran tidak aktif atau offline.</span>
+          <button class="btn-retry" id="btn-retry">Coba Lagi</button>
+        </div>
+
+        <!-- Overlay Tombol Navigasi Saluran (Prev/Next) -->
+        <button class="video-nav-btn prev" id="video-nav-prev" title="Saluran Sebelumnya">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+        <button class="video-nav-btn next" id="video-nav-next" title="Saluran Berikutnya">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        
+        <!-- Toast Notifikasi Pergantian Saluran -->
+        <div class="video-toast" id="video-toast" style="display: none;"></div>
+      </div>
+      
+      <!-- Informasi Saluran yang Diputar -->
+      <div class="active-channel-info" id="active-channel-info">
+        <div class="channel-details-wrapper">
+          <div class="channel-avatar-wrapper" id="current-logo-container">
+            <!-- Logo akan di-generate via JS -->
+            <div class="channel-avatar-placeholder">LIVE</div>
+          </div>
+          <div class="channel-meta-text">
+            <h2 id="current-channel-name">Memuat Saluran...</h2>
+            <div class="meta-tags-container">
+              <span id="current-channel-country" class="tag tag-gold">🌐 -</span>
+              <span id="current-channel-category" class="tag tag-neon">⚽ Sports</span>
+            </div>
+          </div>
+        </div>
+        <div class="playback-status">
+          <span class="pulse-indicator"></span>
+          <span class="status-label">ONLINE</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bagian Daftar Saluran (Kanan pada Desktop) -->
+    <section class="sidebar-section">
+      <div class="sidebar-header">
+        <div class="sidebar-title-group">
+          <h3>Daftar Saluran</h3>
+          <span class="category-badge" id="sidebar-sub-badge">Semua Kategori</span>
+        </div>
+        <div class="channel-counter" id="channel-counter">0 Saluran</div>
+      </div>
+
+      <!-- Filter Kategori & Negara -->
+      <div class="filter-controls">
+        <select id="category-filter" class="category-select">
+          <option value="all">Semua Kategori</option>
+        </select>
+        <select id="country-filter" class="category-select" style="margin-top: 8px;">
+          <option value="all">Semua Negara</option>
+        </select>
+      </div>
+      
+      <!-- List Container -->
+      <div class="channel-list-container" id="channel-list-scroller">
+        <!-- Spinner Loading Saluran Utama -->
+        <div class="sidebar-loader" id="sidebar-loader">
+          <div class="spinner-gold"></div>
+          <p>Sedang sinkronisasi data saluran...</p>
+        </div>
+        
+        <!-- Panel Pesan Error API -->
+        <div class="sidebar-error" id="sidebar-error" style="display: none;">
+          <div class="error-icon">🔌</div>
+          <p class="error-msg">Gagal sinkronisasi data dari IPTV API. Periksa koneksi internet Anda.</p>
+          <button class="btn-retry" id="btn-refresh-api">Segarkan</button>
+        </div>
+        
+        <!-- Grid / List Saluran -->
+        <div class="channels-list" id="channels-list"></div>
+      </div>
+
+      <!-- Pagination Controls -->
+      <div class="pagination-controls" id="pagination-wrapper">
+        <button id="btn-prev" class="btn-page" disabled>&larr; Prev</button>
+        <span id="page-indicator" class="page-indicator">Halaman 1 / 1</span>
+        <button id="btn-next" class="btn-page" disabled>Next &rarr;</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Script Aplikasi -->
+  <script src="app.js"></script>
+</body>
+</html>

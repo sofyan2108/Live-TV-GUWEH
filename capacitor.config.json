@@ -1,0 +1,8 @@
+{
+  "appId": "com.sportstv.app",
+  "appName": "Sports TV Live",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
