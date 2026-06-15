@@ -249,7 +249,7 @@ function processStreamsFlat(streams, channelMap, countryMap) {
 
     allChannels.push({
       id: `channel-${stream.channel}-${allChannels.length}`,
-      channelId: stream.channel,
+      channelId: stream.url,
       name: finalName,
       originalName: name,
       url: stream.url,
