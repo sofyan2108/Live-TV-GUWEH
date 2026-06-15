@@ -14,6 +14,8 @@ let allChannels = [];       // Menyimpan seluruh data saluran yang telah dimuat 
 let filteredChannels = [];  // Menyimpan data saluran setelah filter pencarian/kategori/negara
 let activeChannel = null;   // Saluran yang sedang aktif diputar
 let hlsInstance = null;     // Instansi Hls.js untuk pemutaran stream m3u8
+let favoriteChannelIds = new Set(JSON.parse(localStorage.getItem("tv_favorites") || "[]")); // Daftar ID saluran favorit
+
 
 // Konfigurasi Pagination (Halaman)
 let currentPage = 1;
@@ -59,6 +61,14 @@ const videoToast = document.getElementById("video-toast");
  * Event Listener Utama saat Halaman Selesai Dimuat
  */
 document.addEventListener("DOMContentLoaded", () => {
+  // Sembunyikan Status Bar Android jika berjalan sebagai aplikasi native (Capacitor)
+  if (window.Capacitor && window.Capacitor.Plugins) {
+    const { StatusBar } = window.Capacitor.Plugins;
+    if (StatusBar) {
+      StatusBar.hide().catch(err => console.warn("Gagal menyembunyikan status bar:", err));
+    }
+  }
+
   // Ambil data saluran pertama kali
   loadStreamingData();
 
@@ -258,8 +268,11 @@ function processStreamsFlat(streams, channelMap, countryMap) {
  * Isi Dropdown Select Kategori & Negara secara Dinamis
  */
 function populateFilterDropdowns(categorySet, countrySet) {
-  // 1. Dropdown Kategori
-  categoryFilter.innerHTML = '<option value="all">Semua Kategori</option>';
+  // 1. Dropdown Kategori (Menyediakan opsi "Favorit Saya" paling atas)
+  categoryFilter.innerHTML = `
+    <option value="all">Semua Kategori</option>
+    <option value="favorites">❤️ Favorit Saya</option>
+  `;
   const sortedCategories = Array.from(categorySet).sort();
   sortedCategories.forEach(cat => {
     const option = document.createElement("option");
@@ -297,7 +310,9 @@ function applyFiltersAndRender(resetPage = true) {
   // Perbarui visual sub-badge sidebar
   if (sidebarSubBadge) {
     let badgeText = "Semua Kategori";
-    if (selectedCategory !== "all") {
+    if (selectedCategory === "favorites") {
+      badgeText = "Favorit Saya";
+    } else if (selectedCategory !== "all") {
       badgeText = selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1);
     }
     if (selectedCountry !== "all") {
@@ -308,9 +323,15 @@ function applyFiltersAndRender(resetPage = true) {
 
   // Filter gabungan terpadu
   filteredChannels = allChannels.filter(channel => {
-    // Filter Kategori
-    const matchesCategory = (selectedCategory === "all") || 
-      (channel.categories && channel.categories.some(cat => cat && cat.toLowerCase() === selectedCategory));
+    // Filter Kategori (Mendukung filter bookmark favorit)
+    let matchesCategory = false;
+    if (selectedCategory === "all") {
+      matchesCategory = true;
+    } else if (selectedCategory === "favorites") {
+      matchesCategory = favoriteChannelIds.has(channel.channelId);
+    } else {
+      matchesCategory = channel.categories && channel.categories.some(cat => cat && cat.toLowerCase() === selectedCategory);
+    }
     
     // Filter Negara
     const matchesCountry = (selectedCountry === "all") || 
@@ -408,6 +429,10 @@ function renderChannelsList(channels) {
     const initials = channel.originalName ? channel.originalName.substring(0, 2).toUpperCase() : "TV";
     const flagEmoji = getFlagEmoji(channel.country);
     const qualityClass = channel.quality.toLowerCase(); // fhd, hd, sd
+    const isFav = favoriteChannelIds.has(channel.channelId);
+    const heartIcon = isFav ? 
+      `<svg class="heart-icon active" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>` :
+      `<svg class="heart-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>`;
 
     card.innerHTML = `
       <div class="card-left">
@@ -428,8 +453,19 @@ function renderChannelsList(channels) {
           </div>
         </div>
       </div>
-      <div class="card-indicator"></div>
+      <div class="card-right-actions">
+        <button class="btn-fav" title="Favorit">
+          ${heartIcon}
+        </button>
+        <div class="card-indicator"></div>
+      </div>
     `;
+
+    // Klik tombol favorit
+    const btnFav = card.querySelector(".btn-fav");
+    btnFav.addEventListener("click", (e) => {
+      toggleFavorite(channel.channelId, e);
+    });
 
     // Klik kartu untuk memutar
     card.addEventListener("click", () => {
@@ -794,3 +830,36 @@ function showVideoToast(message) {
   }, 2000);
 }
 
+/**
+ * Mengubah status favorit saluran (ditambahkan/dihapus)
+ */
+function toggleFavorite(channelId, event) {
+  if (event) {
+    event.stopPropagation(); // Mencegah pemutaran saluran terpicu secara tidak sengaja
+  }
+  
+  if (favoriteChannelIds.has(channelId)) {
+    favoriteChannelIds.delete(channelId);
+    showVideoToast("Dihapus dari Favorit ❤️");
+  } else {
+    favoriteChannelIds.add(channelId);
+    showVideoToast("Ditambahkan ke Favorit ❤️");
+  }
+  
+  // Simpan data secara permanen ke localStorage
+  localStorage.setItem("tv_favorites", JSON.stringify(Array.from(favoriteChannelIds)));
+  
+  // Jika filter kategori aktif adalah 'favorites', kita harus merender ulang daftar saringan
+  if (categoryFilter.value === "favorites") {
+    applyFiltersAndRender(false);
+    
+    // Sesuaikan halaman jika halaman saat ini kosong setelah saluran dihapus
+    if (currentPage > totalPages) {
+      currentPage = Math.max(1, totalPages);
+      renderCurrentPage();
+    }
+  } else {
+    // Rendel ulang halaman saat ini untuk memperbarui icon hati
+    renderCurrentPage();
+  }
+}
