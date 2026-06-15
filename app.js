@@ -264,14 +264,12 @@ function processStreamsFlat(streams, channelMap, countryMap) {
   }
 }
 
-/**
- * Isi Dropdown Select Kategori & Negara secara Dinamis
- */
 function populateFilterDropdowns(categorySet, countrySet) {
   // 1. Dropdown Kategori (Menyediakan opsi "Favorit Saya" paling atas)
   categoryFilter.innerHTML = `
     <option value="all">Semua Kategori</option>
     <option value="favorites">❤️ Favorit Saya</option>
+    <option value="worldcup_schedule">🏆 Jadwal Piala Dunia 2026</option>
   `;
   const sortedCategories = Array.from(categorySet).sort();
   sortedCategories.forEach(cat => {
@@ -306,6 +304,22 @@ function applyFiltersAndRender(resetPage = true) {
   const query = searchInput.value.toLowerCase().trim();
   const selectedCategory = categoryFilter.value;
   const selectedCountry = countryFilter.value;
+
+  // Intersepsi khusus jika memilih Jadwal Piala Dunia 2026
+  if (selectedCategory === "worldcup_schedule") {
+    if (sidebarSubBadge) {
+      sidebarSubBadge.textContent = "Jadwal Piala Dunia 2026";
+    }
+    const pag = document.getElementById("pagination-wrapper");
+    if (pag) pag.style.display = "none";
+    channelCounter.textContent = "Jadwal Pertandingan";
+    
+    renderWorldCupSchedule();
+    return;
+  } else {
+    const pag = document.getElementById("pagination-wrapper");
+    if (pag) pag.style.display = "flex";
+  }
 
   // Perbarui visual sub-badge sidebar
   if (sidebarSubBadge) {
@@ -863,3 +877,84 @@ function toggleFavorite(channelId, event) {
     renderCurrentPage();
   }
 }
+
+/**
+ * Merender Jadwal Pertandingan Piala Dunia 2026 (WIB / GMT+7) ke Kontainer Sidebar
+ */
+function renderWorldCupSchedule() {
+  channelsListContainer.innerHTML = "";
+  
+  // Data Jadwal Piala Dunia 2026 (Pertengahan Juni 2026 - Waktu Indonesia Barat)
+  const scheduleData = [
+    { date: "Senin, 15 Juni 2026", time: "05:00 WIB", team1: "Argentina", flag1: "🇦🇷", team2: "Australia", flag2: "🇦🇺", group: "Grup C", status: "Selesai" },
+    { date: "Senin, 15 Juni 2026", time: "08:00 WIB", team1: "Prancis", flag1: "🇫🇷", team2: "Korea Selatan", flag2: "🇰🇷", group: "Grup D", status: "Selesai" },
+    { date: "Senin, 15 Juni 2026", time: "23:00 WIB", team1: "Spanyol", flag1: "🇪🇸", team2: "Kamerun", flag2: "🇨🇲", group: "Grup E", status: "Akan Datang" },
+    { date: "Selasa, 16 Juni 2026", time: "04:00 WIB", team1: "Brasil", flag1: "🇧🇷", team2: "Polandia", flag2: "🇵🇱", group: "Grup A", status: "Akan Datang" },
+    { date: "Selasa, 16 Juni 2026", time: "07:00 WIB", team1: "Inggris", flag1: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", team2: "Jepang", flag2: "🇯🇵", group: "Grup B", status: "Akan Datang" },
+    { date: "Selasa, 16 Juni 2026", time: "10:00 WIB", team1: "Jerman", flag1: "🇩🇪", team2: "Ekuador", flag2: "🇪🇨", group: "Grup F", status: "Akan Datang" },
+    { date: "Rabu, 17 Juni 2026", time: "05:00 WIB", team1: "Portugal", flag1: "🇵🇹", team2: "Iran", flag2: "🇮🇷", group: "Grup H", status: "Akan Datang" },
+    { date: "Rabu, 17 Juni 2026", time: "08:00 WIB", team1: "Belanda", flag1: "🇳🇱", team2: "Tunisia", flag2: "🇹🇳", group: "Grup C", status: "Akan Datang" },
+    { date: "Rabu, 17 Juni 2026", time: "11:00 WIB", team1: "Kanada", flag1: "🇨🇦", team2: "Maroko", flag2: "🇲🇦", group: "Grup A", status: "Akan Datang" },
+    { date: "Kamis, 18 Juni 2026", time: "06:00 WIB", team1: "Belgia", flag1: "🇧🇪", team2: "Peru", flag2: "🇵🇪", group: "Grup E", status: "Akan Datang" },
+    { date: "Kamis, 18 Juni 2026", time: "09:00 WIB", team1: "Kroasia", flag1: "🇭🇷", team2: "Meksiko", flag2: "🇲🇽", group: "Grup B", status: "Akan Datang" }
+  ];
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "schedule-list-wrapper";
+
+  scheduleData.forEach(match => {
+    const card = document.createElement("div");
+    card.className = "schedule-card";
+    
+    let statusClass = "status-upcoming";
+    if (match.status === "Selesai") {
+      statusClass = "status-ended";
+    } else if (match.status === "LIVE") {
+      statusClass = "status-live";
+    }
+
+    card.innerHTML = `
+      <div class="schedule-header">
+        <span class="schedule-group">${match.group}</span>
+        <span class="schedule-status ${statusClass}">${match.status}</span>
+      </div>
+      <div class="schedule-body">
+        <div class="schedule-team">
+          <span class="schedule-flag">${match.flag1}</span>
+          <span class="schedule-team-name">${match.team1}</span>
+        </div>
+        <div class="schedule-vs">VS</div>
+        <div class="schedule-team">
+          <span class="schedule-flag">${match.flag2}</span>
+          <span class="schedule-team-name">${match.team2}</span>
+        </div>
+      </div>
+      <div class="schedule-footer">
+        <div class="schedule-time-info">
+          📅 ${match.date} &nbsp;|&nbsp; ⏰ ${match.time}
+        </div>
+        ${match.status !== "Selesai" ? `
+          <button class="btn-watch-now" title="Tonton Siaran Langsung">
+            📺 Tonton
+          </button>
+        ` : ""}
+      </div>
+    `;
+
+    // Tombol "Tonton" otomatis mencarikan siaran live dengan kata kunci nama tim
+    if (match.status !== "Selesai") {
+      const btnWatch = card.querySelector(".btn-watch-now");
+      btnWatch.addEventListener("click", () => {
+        categoryFilter.value = "all";
+        searchInput.value = match.team1;
+        applyFiltersAndRender();
+        showVideoToast(`Mencari saluran: ${match.team1}`);
+      });
+    }
+
+    wrapper.appendChild(card);
+  });
+
+  channelsListContainer.appendChild(wrapper);
+}
+
