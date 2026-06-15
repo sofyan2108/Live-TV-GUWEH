@@ -15,6 +15,7 @@ let filteredChannels = [];  // Menyimpan data saluran setelah filter pencarian/k
 let activeChannel = null;   // Saluran yang sedang aktif diputar
 let hlsInstance = null;     // Instansi Hls.js untuk pemutaran stream m3u8
 let favoriteChannelIds = new Set(JSON.parse(localStorage.getItem("tv_favorites") || "[]")); // Daftar ID saluran favorit
+let customTagsMap = JSON.parse(localStorage.getItem("tv_custom_tags") || "{}"); // Peta ID saluran ke daftar tag kustom
 
 
 // Konfigurasi Pagination (Halaman)
@@ -368,10 +369,14 @@ function applyFiltersAndRender(resetPage = true) {
       (channel.country && channel.country.toLowerCase() === selectedCountry);
 
     // Filter Kata Kunci Pencarian
+    const tags = customTagsMap[channel.channelId] || [];
+    const matchesTags = tags.some(tag => tag.toLowerCase().includes(query));
+
     const matchesSearch = (query === "") || 
       (channel.name || "").toLowerCase().includes(query) || 
       (channel.countryName || "").toLowerCase().includes(query) ||
-      (channel.country || "").toLowerCase().includes(query);
+      (channel.country || "").toLowerCase().includes(query) ||
+      matchesTags;
 
     return matchesCategory && matchesCountry && matchesSearch;
   });
@@ -464,6 +469,14 @@ function renderChannelsList(channels) {
       `<svg class="heart-icon active" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>` :
       `<svg class="heart-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>`;
 
+    const customTags = customTagsMap[channel.channelId] || [];
+    const customTagsHtml = customTags.map(tag => `<span class="tag tag-custom" title="Tag Kustom: ${tag}">🏷️ ${tag}</span>`).join('');
+    const tagButtonHtml = isFav ? `
+      <button class="btn-tag" title="Edit Tag Kustom">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+      </button>
+    ` : '';
+
     card.innerHTML = `
       <div class="card-left">
         <div class="card-logo-wrapper">
@@ -480,10 +493,12 @@ function renderChannelsList(channels) {
             <span class="badge-quality ${qualityClass}">${channel.quality}</span>
             <span class="card-meta-dot"></span>
             <span style="text-transform: capitalize;">${channel.categories.length > 0 ? channel.categories[0] : 'General'}</span>
+            ${customTagsHtml}
           </div>
         </div>
       </div>
       <div class="card-right-actions">
+        ${tagButtonHtml}
         <button class="btn-fav" title="Favorit">
           ${heartIcon}
         </button>
@@ -496,6 +511,15 @@ function renderChannelsList(channels) {
     btnFav.addEventListener("click", (e) => {
       toggleFavorite(channel.channelId, e);
     });
+
+    // Klik tombol edit tag kustom
+    const btnTag = card.querySelector(".btn-tag");
+    if (btnTag) {
+      btnTag.addEventListener("click", (e) => {
+        e.stopPropagation();
+        editCustomTags(channel.channelId);
+      });
+    }
 
     // Klik kartu untuk memutar
     card.addEventListener("click", () => {
@@ -972,5 +996,28 @@ function renderWorldCupSchedule() {
   });
 
   channelsListContainer.appendChild(wrapper);
+}
+
+/**
+ * Mengedit tag kustom untuk saluran tertentu
+ */
+function editCustomTags(channelId) {
+  const currentTags = customTagsMap[channelId] || [];
+  const input = prompt("Masukkan tag kustom untuk saluran ini (pisahkan dengan koma):\nContoh: Lancar, FHD, Utama, Cadangan", currentTags.join(", "));
+  
+  if (input === null) return; // Pengguna membatalkan dialog
+  
+  const newTags = input.split(",")
+    .map(t => t.trim())
+    .filter(t => t.length > 0);
+    
+  if (newTags.length > 0) {
+    customTagsMap[channelId] = newTags;
+  } else {
+    delete customTagsMap[channelId];
+  }
+  
+  localStorage.setItem("tv_custom_tags", JSON.stringify(customTagsMap));
+  applyFiltersAndRender(false);
 }
 

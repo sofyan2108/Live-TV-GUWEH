@@ -1022,6 +1022,38 @@ video {
   gap: 12px;
 }
 
+.btn-tag {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border-radius: 50%;
+  outline: none;
+}
+
+.btn-tag:hover {
+  color: var(--accent-neon);
+  background-color: rgba(0, 255, 135, 0.08);
+  transform: scale(1.15);
+}
+
+.btn-tag:active {
+  transform: scale(0.95);
+}
+
+.tag-custom {
+  background-color: rgba(147, 51, 234, 0.12);
+  color: #c084fc;
+  border: 1px solid rgba(147, 51, 234, 0.25);
+  font-size: 10px;
+  text-transform: none;
+}
+
 .btn-fav {
   background: none;
   border: none;
