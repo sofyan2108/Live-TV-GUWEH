@@ -83,35 +83,39 @@ jobs:
             });
           "
 
-      # 6c. Konfigurasi Ikon Aplikasi SOPI TV Menggunakan icon.jpeg
+      # 6c. Konfigurasi Ikon Aplikasi SOPI TV Menggunakan icon.jpeg (Python + Pillow)
       - name: Generate and Configure App Icons
         run: |
           # Hapus folder adaptive icon agar sistem fallback ke png klasik
           rm -rf android/app/src/main/res/mipmap-anydpi-v26
           
-          # Buat daftar resolusi dan jalankan convert (ImageMagick)
-          mkdir -p android/app/src/main/res/mipmap-mdpi
-          mkdir -p android/app/src/main/res/mipmap-hdpi
-          mkdir -p android/app/src/main/res/mipmap-xhdpi
-          mkdir -p android/app/src/main/res/mipmap-xxhdpi
-          mkdir -p android/app/src/main/res/mipmap-xxxhdpi
-          
-          convert icon.jpeg -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
-          convert icon.jpeg -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
-          
-          convert icon.jpeg -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
-          convert icon.jpeg -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
-          
-          convert icon.jpeg -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
-          convert icon.jpeg -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
-          
-          convert icon.jpeg -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
-          convert icon.jpeg -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
-          
-          convert icon.jpeg -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
-          convert icon.jpeg -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
-          
-          echo "App icons successfully generated from icon.jpeg!"
+          # Gunakan python3 dengan library Pillow (bawaan GitHub runner) untuk me-resize gambar
+          python3 -c "
+from PIL import Image
+import os
+
+img = Image.open('icon.jpeg')
+resolutions = {
+    'mipmap-mdpi': 48,
+    'mipmap-hdpi': 72,
+    'mipmap-xhdpi': 96,
+    'mipmap-xxhdpi': 144,
+    'mipmap-xxxhdpi': 192
+}
+
+try:
+    resample_method = Image.Resampling.LANCZOS
+except AttributeError:
+    resample_method = Image.LANCZOS
+
+for folder, res in resolutions.items():
+    dest_dir = f'android/app/src/main/res/{folder}'
+    os.makedirs(dest_dir, exist_ok=True)
+    resized = img.resize((res, res), resample_method)
+    resized.save(f'{dest_dir}/ic_launcher.png', 'PNG')
+    resized.save(f'{dest_dir}/ic_launcher_round.png', 'PNG')
+print('App icons successfully generated from icon.jpeg via Python Pillow!')
+"
 
       # 7. Bangun APK menggunakan Gradle Wrapper di folder android
       - name: Build Android App (APK Debug)
