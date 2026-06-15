@@ -83,39 +83,13 @@ jobs:
             });
           "
 
-      # 6c. Konfigurasi Ikon Aplikasi SOPI TV Menggunakan icon.jpeg (Python + Pillow)
+      # 6c. Konfigurasi Ikon Aplikasi SOPI TV Menggunakan icon.jpeg
       - name: Generate and Configure App Icons
         run: |
           # Hapus folder adaptive icon agar sistem fallback ke png klasik
           rm -rf android/app/src/main/res/mipmap-anydpi-v26
-          
-          # Gunakan python3 dengan library Pillow (bawaan GitHub runner) untuk me-resize gambar
-          python3 -c "
-from PIL import Image
-import os
-
-img = Image.open('icon.jpeg')
-resolutions = {
-    'mipmap-mdpi': 48,
-    'mipmap-hdpi': 72,
-    'mipmap-xhdpi': 96,
-    'mipmap-xxhdpi': 144,
-    'mipmap-xxxhdpi': 192
-}
-
-try:
-    resample_method = Image.Resampling.LANCZOS
-except AttributeError:
-    resample_method = Image.LANCZOS
-
-for folder, res in resolutions.items():
-    dest_dir = f'android/app/src/main/res/{folder}'
-    os.makedirs(dest_dir, exist_ok=True)
-    resized = img.resize((res, res), resample_method)
-    resized.save(f'{dest_dir}/ic_launcher.png', 'PNG')
-    resized.save(f'{dest_dir}/ic_launcher_round.png', 'PNG')
-print('App icons successfully generated from icon.jpeg via Python Pillow!')
-"
+          # Jalankan skrip pembantu untuk me-resize ikon
+          python3 generate_icons.py
 
       # 7. Bangun APK menggunakan Gradle Wrapper di folder android
       - name: Build Android App (APK Debug)
