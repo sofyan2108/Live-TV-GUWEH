@@ -38,7 +38,7 @@ jobs:
       - name: Prepare Web Assets (www)
         run: |
           mkdir -p www
-          cp index.html styles.css app.js www/
+          cp index.html styles.css app.js icon.jpeg www/
           echo "www directory contents:"
           ls -la www/
 
@@ -86,6 +86,7 @@ jobs:
       # 6c. Konfigurasi Ikon Aplikasi SOPI TV Menggunakan icon.jpeg
       - name: Generate and Configure App Icons
         run: |
+          python3 -m pip install Pillow
           # Hapus folder adaptive icon agar sistem fallback ke png klasik
           rm -rf android/app/src/main/res/mipmap-anydpi-v26
           # Jalankan skrip pembantu untuk me-resize ikon
