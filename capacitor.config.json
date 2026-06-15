@@ -1,6 +1,6 @@
 {
-  "appId": "com.sportstv.app",
-  "appName": "Sports TV Live",
+  "appId": "com.sopitv.app",
+  "appName": "SOPI TV",
   "webDir": "www",
   "server": {
     "androidScheme": "https"

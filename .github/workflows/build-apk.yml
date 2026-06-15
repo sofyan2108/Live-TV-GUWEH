@@ -83,6 +83,36 @@ jobs:
             });
           "
 
+      # 6c. Konfigurasi Ikon Aplikasi SOPI TV Menggunakan icon.jpeg
+      - name: Generate and Configure App Icons
+        run: |
+          # Hapus folder adaptive icon agar sistem fallback ke png klasik
+          rm -rf android/app/src/main/res/mipmap-anydpi-v26
+          
+          # Buat daftar resolusi dan jalankan convert (ImageMagick)
+          mkdir -p android/app/src/main/res/mipmap-mdpi
+          mkdir -p android/app/src/main/res/mipmap-hdpi
+          mkdir -p android/app/src/main/res/mipmap-xhdpi
+          mkdir -p android/app/src/main/res/mipmap-xxhdpi
+          mkdir -p android/app/src/main/res/mipmap-xxxhdpi
+          
+          convert icon.jpeg -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          convert icon.jpeg -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+          
+          convert icon.jpeg -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          convert icon.jpeg -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+          
+          convert icon.jpeg -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          convert icon.jpeg -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+          
+          convert icon.jpeg -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          convert icon.jpeg -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+          
+          convert icon.jpeg -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          convert icon.jpeg -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+          
+          echo "App icons successfully generated from icon.jpeg!"
+
       # 7. Bangun APK menggunakan Gradle Wrapper di folder android
       - name: Build Android App (APK Debug)
         run: |
@@ -94,7 +124,7 @@ jobs:
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: LiveTV-Sports-Debug-APK
+          name: SOPI-TV-Debug-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
