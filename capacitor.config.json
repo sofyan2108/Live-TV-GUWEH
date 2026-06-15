@@ -3,6 +3,7 @@
   "appName": "SOPI TV",
   "webDir": "www",
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "cleartext": true
   }
 }
