@@ -54,7 +54,13 @@ const currentLogoContainer = document.getElementById("current-logo-container");
 // Referensi Elemen Navigasi Video Overlay
 const videoNavPrev = document.getElementById("video-nav-prev");
 const videoNavNext = document.getElementById("video-nav-next");
+const videoAspectBtn = document.getElementById("video-aspect-btn");
 const videoToast = document.getElementById("video-toast");
+
+// Konfigurasi Aspek Rasio Video
+const aspectRatios = ["contain", "fill", "cover"];
+const aspectRatioLabels = ["Fit (Asli)", "Stretch (Penuh)", "Zoom (Potong)"];
+let currentAspectIdx = 0;
 
 
 /**
@@ -101,6 +107,16 @@ document.addEventListener("DOMContentLoaded", () => {
     e.stopPropagation();
     playNextChannel();
   });
+
+  // Daftarkan event listener untuk tombol aspek rasio video
+  if (videoAspectBtn) {
+    videoAspectBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      currentAspectIdx = (currentAspectIdx + 1) % aspectRatios.length;
+      videoElement.style.objectFit = aspectRatios[currentAspectIdx];
+      showVideoToast(`Rasio Gambar: ${aspectRatioLabels[currentAspectIdx]}`);
+    });
+  }
 
   // Daftarkan event listener tombol keyboard/remote control
   document.addEventListener("keydown", handleKeyDown);

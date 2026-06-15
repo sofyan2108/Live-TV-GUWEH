@@ -48,7 +48,7 @@ jobs:
           npx cap add android
           npx cap sync
 
-      # 6b. Setel Aplikasi Android agar berjalan Fullscreen Immersive Natively (Tanpa Status Bar)
+      # 6b. Setel Aplikasi Android agar berjalan Fullscreen Immersive Natively & Bypass Notch Kamera
       - name: Configure Fullscreen Native Android Theme
         run: |
           node -e "
@@ -60,13 +60,24 @@ jobs:
             files.forEach(path => {
               if (fs.existsSync(path)) {
                 let content = fs.readFileSync(path, 'utf8');
+                let modified = false;
                 if (!content.includes('android:windowFullscreen')) {
                   content = content.replace(
                     '<style name=\"AppTheme\" parent=\"BridgeTheme\">',
                     '<style name=\"AppTheme\" parent=\"BridgeTheme\">\n        <item name=\"android:windowFullscreen\">true</item>'
                   );
+                  modified = true;
+                }
+                if (!content.includes('android:windowLayoutInDisplayCutoutMode')) {
+                  content = content.replace(
+                    '<style name=\"AppTheme\" parent=\"BridgeTheme\">',
+                    '<style name=\"AppTheme\" parent=\"BridgeTheme\">\n        <item name=\"android:windowLayoutInDisplayCutoutMode\">shortEdges</item>'
+                  );
+                  modified = true;
+                }
+                if (modified) {
                   fs.writeFileSync(path, content, 'utf8');
-                  console.log('Modified fullscreen theme for: ' + path);
+                  console.log('Modified fullscreen & cutout layout theme for: ' + path);
                 }
               }
             });
