@@ -48,6 +48,30 @@ jobs:
           npx cap add android
           npx cap sync
 
+      # 6b. Setel Aplikasi Android agar berjalan Fullscreen Immersive Natively (Tanpa Status Bar)
+      - name: Configure Fullscreen Native Android Theme
+        run: |
+          node -e "
+            const fs = require('fs');
+            const files = [
+              'android/app/src/main/res/values/styles.xml',
+              'android/app/src/main/res/values-night/styles.xml'
+            ];
+            files.forEach(path => {
+              if (fs.existsSync(path)) {
+                let content = fs.readFileSync(path, 'utf8');
+                if (!content.includes('android:windowFullscreen')) {
+                  content = content.replace(
+                    '<style name=\"AppTheme\" parent=\"BridgeTheme\">',
+                    '<style name=\"AppTheme\" parent=\"BridgeTheme\">\n        <item name=\"android:windowFullscreen\">true</item>'
+                  );
+                  fs.writeFileSync(path, content, 'utf8');
+                  console.log('Modified fullscreen theme for: ' + path);
+                }
+              }
+            });
+          "
+
       # 7. Bangun APK menggunakan Gradle Wrapper di folder android
       - name: Build Android App (APK Debug)
         run: |
